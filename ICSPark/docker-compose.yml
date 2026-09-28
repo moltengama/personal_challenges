@@ -1,0 +1,116 @@
+services:
+  # ─────────────────────────────────────────────────────────────
+  # CONTENEDOR 1: WEB  (React + Express, 4 puertos)
+  #   8081 auditores | 8082 visualizador | 8083 admin | 8084 ingeniería
+  # ─────────────────────────────────────────────────────────────
+  web:
+    build: ./web
+    image: icspark/web
+    restart: unless-stopped
+    ports:
+      - "8081:8081"   # portal público de auditores (React)
+      - "8082:8082"   # visualizador de puertas del paddock
+      - "8083:8083"   # web interna de administrador
+      - "8084:8084"   # web de ingeniería (arranca DESHABILITADA -> 503)
+    environment:
+      FINAL_FLAG: "${FINAL_FLAG}"
+      AUDITOR_USER: "${AUDITOR_USER}"
+      AUDITOR_PASS: "${AUDITOR_PASS}"
+      SCADA_HOST: "${SCADA_HOST}"
+      SCADA_PORT: "${SCADA_PORT}"
+    networks:
+      - red-dmz
+      - red-ot
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8081/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    deploy:
+      resources:
+        limits: { cpus: "0.50", memory: "256M" }
+
+  # ─────────────────────────────────────────────────────────────
+  # CONTENEDOR 2: SCADA / HMI  (Flask + Swagger + cliente Modbus)
+  #   Solo alcanzable desde 'web' (red-ot). Habla al PLC (red-plc).
+  # ─────────────────────────────────────────────────────────────
+  scada:
+    build: ./scada
+    image: icspark/scada
+    restart: unless-stopped
+    environment:
+      PLC_HOST: "${PLC_HOST}"
+      PLC_PORT: "${PLC_PORT}"
+      SAFETY_HOST: "${SAFETY_HOST}"
+      SAFETY_PORT: "${SAFETY_PORT}"
+    networks:
+      - red-ot
+      - red-plc
+    expose:
+      - "5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:5000/healthz')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    deploy:
+      resources:
+        limits: { cpus: "0.30", memory: "128M" }
+
+  # ─────────────────────────────────────────────────────────────
+  # CONTENEDOR 3: PLC de proceso  (servidor Modbus TCP con pymodbus)
+  #   Solo alcanzable desde 'scada'/'safety' (red-plc). Nunca expuesto.
+  # ─────────────────────────────────────────────────────────────
+  plc:
+    build: ./plc
+    image: icspark/plc
+    restart: unless-stopped
+    networks:
+      - red-plc
+    expose:
+      - "502"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    deploy:
+      resources:
+        limits: { cpus: "0.20", memory: "64M" }
+
+  # ─────────────────────────────────────────────────────────────
+  # CONTENEDOR 4: SIS  (Safety Instrumented System — logic solver)
+  #   Independiente del BPCS. Enclava la puerta del T-Rex (SIF-09):
+  #   fuerza estado seguro salvo bypass válido. Solo en red-plc.
+  # ─────────────────────────────────────────────────────────────
+  safety:
+    build: ./safety
+    image: icspark/safety
+    restart: unless-stopped
+    environment:
+      PLC_HOST: "${PLC_HOST}"
+      PLC_PORT: "${PLC_PORT}"
+    networks:
+      - red-plc
+    expose:
+      - "502"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    deploy:
+      resources:
+        limits: { cpus: "0.15", memory: "64M" }
+
+networks:
+  red-dmz:
+    driver: bridge
+  red-ot:
+    driver: bridge
+    internal: true      # sin salida a Internet; solo web <-> scada
+  red-plc:
+    driver: bridge
+    internal: true      # sin salida a Internet; solo scada <-> plc

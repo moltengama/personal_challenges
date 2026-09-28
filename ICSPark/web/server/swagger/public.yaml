@@ -1,0 +1,59 @@
+openapi: 3.0.0
+info:
+  title: InGen Park — Auditors API
+  version: "1.0"
+  description: >
+    API del portal público de auditores de Jurassic Park. Permite iniciar
+    sesión y generar informes de auditoría con opciones de plantilla.
+servers:
+  - url: /
+paths:
+  /api/login:
+    post:
+      summary: Iniciar sesión de auditor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        "200": { description: Sesión iniciada (cookie sid) }
+        "401": { description: Credenciales inválidas }
+  /api/me:
+    get:
+      summary: Perfil de la sesión actual
+      responses:
+        "200": { description: Datos del auditor }
+        "401": { description: No autenticado }
+  /api/reports:
+    get:
+      summary: Listar informes de auditoría disponibles
+      responses:
+        "200": { description: Lista de informes }
+  /api/reports/download:
+    post:
+      summary: Generar/descargar un informe con opciones de plantilla
+      description: >
+        Combina las opciones enviadas con la plantilla por defecto del informe.
+        El campo `options` acepta ajustes anidados (formato, marca de agua,
+        secciones, branding...).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                template: { type: string, example: audit-summary }
+                options:
+                  type: object
+                  example:
+                    format: pdf
+                    branding: { color: "#0a7" }
+      responses:
+        "200": { description: Informe generado }
+        "401": { description: No autenticado }

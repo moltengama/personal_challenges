@@ -1,0 +1,8 @@
+paddock_id,name,species,coil,zone,notes
+PADDOCK-00,Bahia de servicio,Mantenimiento,0,service,Uso interno
+PADDOCK-01,Valle Norte,Brachiosaurus,1,herbivore,Herbivoro - bajo riesgo
+PADDOCK-03,Llanura Este,Gallimimus,3,herbivore,Herbivoro - bajo riesgo
+PADDOCK-05,Jardin Sur,Dilophosaurus,5,carnivore,Carnivoro - riesgo medio
+PADDOCK-07,Recinto Raptor,Velociraptor,7,carnivore,Carnivoro - ALTO riesgo
+PADDOCK-09,Recinto Rex,Tyrannosaurus rex,9,carnivore,Carnivoro - MAXIMO riesgo - puerta enclavada por SIF-09 (SIS-09)
+PADDOCK-12,Colina Oeste,Triceratops,12,herbivore,Herbivoro - bajo riesgo
