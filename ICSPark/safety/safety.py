@@ -16,6 +16,7 @@ Mapa de registros del propio SIS (Modbus TCP, slave 1):
 Nota de ingeniería: el KEYSWITCH quedó en PROGRAM (modo mantenimiento). En RUN
 el controlador ignora cualquier MAINT_BYPASS. En PROGRAM, un bypass escrito se
 respeta y la SIF deja de actuar — igual que un Triconex dejado en PROGRAM.
+https://www.youtube.com/watch?v=BtLSaxRnIhc
 """
 import logging
 import os
